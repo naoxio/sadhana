@@ -1,2 +1,40 @@
-__pycache__
-.venv
+# Compiled object files
+*.o
+
+# Compiled dynamic libraries
+*.so
+
+# Compiled static libraries
+*.a
+
+# Executables
+bin/
+
+# Nix-specific
+result
+
+# Editor-specific files
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+build/
+
+# Dependency directories (if any)
+deps/
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+
+# XMake
+.xmake/
+build/
