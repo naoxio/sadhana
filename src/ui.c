@@ -5,13 +5,11 @@
 #include "ui.h"
 #include "practice.h"
 #include "utils.h"
-#include "config.h"
 
-#define MENU_ITEMS 7
+#define MENU_ITEMS 5
 
 static const char *menu_items[MENU_ITEMS] = {
-    "Install", "Uninstall", "List Practices", "Run Practice",
-    "Update Practices", "Configure Practice", "Exit"
+    "List Practices", "Run Practice", "Update Practices", "Configure Practice", "Exit"
 };
 
 static void draw_menu(int selected) {
@@ -63,13 +61,11 @@ int run_gui(void) {
                     } else if (ev.key == TB_KEY_ENTER) {
                         tb_shutdown();
                         switch (selected) {
-                            case 0: return install_sadhana();
-                            case 1: return uninstall_sadhana();
-                            case 2: return list_practices();
-                            case 3: return run_practice(NULL);  // Implement practice selection
-                            case 4: return update_practices();
-                            case 5: return configure_practice(NULL);  // Implement practice selection
-                            case 6: return 0;  // Exit
+                            case 0: return list_recipes();
+                            case 1: return run_practice(NULL);  // Implement practice selection
+                            case 2: return update_recipes();
+                            case 3: return configure_practice(NULL);  // Implement practice selection
+                            case 4: return 0;  // Exit
                         }
                     }
                     break;
