@@ -1,10 +1,12 @@
 #ifndef PRACTICE_H
 #define PRACTICE_H
 
-int install_sadhana(void);
-int uninstall_sadhana(void);
-int list_practices(void);
+int download_recipes(void);
+int extract_recipes(void);
+int initialize_recipes(void);
+int update_recipes(void);
+int list_recipes(void);
 int run_practice(const char *practice_name);
-int update_practices(void);
+int configure_practice(const char *practice_name);
 
-#endif
+#endif // PRACTICE_H

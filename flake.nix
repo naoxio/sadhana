@@ -9,22 +9,22 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         pkgsCross = pkgs.pkgsCross.mingwW64;
-
-        buildSadhana = { pkgs, static ? false }: pkgs.stdenv.mkDerivation {
+        buildSadhana = pkgs: pkgs.stdenv.mkDerivation {
           pname = "sadhana";
           version = "0.1.0";
           src = ./.;
           nativeBuildInputs = with pkgs; [ pkg-config ];
-          buildInputs = with pkgs; [ tinycc termbox ];
+          buildInputs = with pkgs; [ tinycc termbox curl ];
           buildPhase = ''
             mkdir -p bin
             tcc -Wall -Wextra -pedantic -std=c99 \
                 -I${pkgs.termbox}/include \
+                -I${pkgs.curl.dev}/include \
                 -L${pkgs.termbox}/lib \
+                -L${pkgs.curl.out}/lib \
                 -o bin/sadhana \
                 src/*.c \
-                -ltermbox \
-                ${if static then "-static" else ""}
+                -ltermbox -lcurl
           '';
           installPhase = ''
             mkdir -p $out/bin
@@ -40,21 +40,21 @@
       in
       {
         packages = {
-          default = buildSadhana { inherit pkgs; };
-          static = buildSadhana { inherit pkgs; static = true; };
-          windows = buildSadhana { pkgs = pkgsCross; static = true; };
+          default = buildSadhana pkgs;
+          windows = buildSadhana pkgsCross;
         };
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
             tinycc
             pkg-config
             termbox
+            curl
           ];
           shellHook = ''
-            export PKG_CONFIG_PATH="${pkgs.termbox}/lib/pkgconfig:$PKG_CONFIG_PATH"
-            export C_INCLUDE_PATH="${pkgs.termbox}/include:$C_INCLUDE_PATH"
-            export LIBRARY_PATH="${pkgs.termbox}/lib:$LIBRARY_PATH"
-            export LD_LIBRARY_PATH="${pkgs.termbox}/lib:$LD_LIBRARY_PATH"
+            export PKG_CONFIG_PATH="${pkgs.termbox}/lib/pkgconfig:${pkgs.curl.dev}/lib/pkgconfig:$PKG_CONFIG_PATH"
+            export C_INCLUDE_PATH="${pkgs.termbox}/include:${pkgs.curl.dev}/include:$C_INCLUDE_PATH"
+            export LIBRARY_PATH="${pkgs.termbox}/lib:${pkgs.curl.out}/lib:$LIBRARY_PATH"
+            export LD_LIBRARY_PATH="${pkgs.termbox}/lib:${pkgs.curl.out}/lib:$LD_LIBRARY_PATH"
           '';
         };
       }
