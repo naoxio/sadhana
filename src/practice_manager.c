@@ -8,11 +8,21 @@
 #include <dirent.h>
 #include <errno.h>
 #include "miniz.h"
-#include "practice.h"
+#include "practice_manager.h"
 
 #define SADHANA_HUB_URL "https://github.com/naoxio/sadhana/archive/refs/heads/main.zip"
 #define SADHANA_FILE "sadhana-main.zip"
 #define PRACTICES_DIR "~/.local/share/sadhana/practices"
+
+const char* CATEGORY_DIRS[] = {
+    "breathing",
+    "meditation",
+    "yoga",
+    "movement",
+    "mindfulness"
+};
+
+#define NUM_CATEGORIES (sizeof(CATEGORY_DIRS) / sizeof(CATEGORY_DIRS[0]))
 
 void get_full_practices_dir(char *full_path, size_t size) {
     snprintf(full_path, size, "%s/%s", getenv("HOME"), &PRACTICES_DIR[2]);
@@ -22,6 +32,7 @@ size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     size_t written = fwrite(ptr, size, nmemb, stream);
     return written;
 }
+
 int download_practices(void) {
     CURL *curl;
     FILE *fp;
@@ -113,7 +124,6 @@ int extract_practices(void) {
             printf("Debug: Extracting file: %s\n", output_path);
 
             if (mz_zip_reader_is_file_a_directory(&zip_archive, i)) {
-                printf("Debug: Creating directory: %s\n", output_path);
                 mkdir(output_path, 0755);
             } else {
                 // Ensure the directory exists
@@ -125,17 +135,14 @@ int extract_practices(void) {
                 }
 
                 if (!mz_zip_reader_extract_to_file(&zip_archive, i, output_path, 0)) {
-                    fprintf(stderr, "Debug: Failed to extract file: %s\n", output_path);
                     mz_zip_reader_end(&zip_archive);
                     return 1;
                 }
-                printf("Debug: File extracted successfully: %s\n", output_path);
             }
         }
     }
 
     mz_zip_reader_end(&zip_archive);
-    printf("Debug: Extraction completed successfully\n");
     return 0;
 }
 
@@ -145,22 +152,19 @@ int practices_initialized(void) {
     get_full_practices_dir(practices_dir, sizeof(practices_dir));
     return (stat(practices_dir, &st) != -1);
 }
+
 int initialize_practices(void) {
     char practices_dir[256];
     get_full_practices_dir(practices_dir, sizeof(practices_dir));
 
-    printf("Debug: Creating practices directory: %s\n", practices_dir);
     if (mkdir(practices_dir, 0755) != 0 && errno != EEXIST) {
-        fprintf(stderr, "Debug: Failed to create practices directory: %s\n", strerror(errno));
         return 1;
     }
 
     if (download_practices() != 0) {
-        fprintf(stderr, "Failed to download practices\n");
         return 1;
     }
     if (extract_practices() != 0) {
-        fprintf(stderr, "Failed to extract practices\n");
         return 1;
     }
     remove(SADHANA_FILE);
@@ -168,71 +172,53 @@ int initialize_practices(void) {
 }
 
 int update_practices(void) {
-    return initialize_practices();  // For simplicity, we're just re-initializing
+    return initialize_practices();
 }
 
-int get_practices(char practices[MAX_PRACTICES][MAX_PRACTICE_NAME], int max_practices) {
+int get_practices(char practices[][MAX_PRACTICE_NAME], int max_practices) {
     char practices_dir[256];
     get_full_practices_dir(practices_dir, sizeof(practices_dir));
 
-    DIR *dir;
-    struct dirent *ent;
     int count = 0;
+    DIR *dir;
+    struct dirent *entry;
+    struct stat file_stat;
 
-    dir = opendir(practices_dir);
-    if (dir == NULL) {
-        fprintf(stderr, "Error: Unable to open practices directory\n");
-        return -1;
-    }
+    for (int i = 0; i < NUM_CATEGORIES && count < max_practices; i++) {
+        char category_path[512];
+        snprintf(category_path, sizeof(category_path), "%s/%s", practices_dir, CATEGORY_DIRS[i]);
 
-    while ((ent = readdir(dir)) != NULL && count < max_practices) {
-        char full_path[512];
-        struct stat st;
+        dir = opendir(category_path);
+        if (dir == NULL) {
+            continue;
+        }
 
-        snprintf(full_path, sizeof(full_path), "%s/%s", practices_dir, ent->d_name);
+        while ((entry = readdir(dir)) != NULL && count < max_practices) {
+            char full_path[768];
+            snprintf(full_path, sizeof(full_path), "%s/%s", category_path, entry->d_name);
 
-        if (stat(full_path, &st) == 0 && S_ISREG(st.st_mode)) {
-            char *ext = strrchr(ent->d_name, '.');
-            if (ext && strcmp(ext, ".yaml") == 0) {
-                strncpy(practices[count], ent->d_name, MAX_PRACTICE_NAME - 1);
-                practices[count][MAX_PRACTICE_NAME - 1] = '\0'; // Ensure null-termination
-                practices[count][strlen(practices[count]) - 5] = '\0'; // Remove .yaml extension
-                count++;
+            if (stat(full_path, &file_stat) == 0 && S_ISREG(file_stat.st_mode)) {
+                char *ext = strrchr(entry->d_name, '.');
+                if (ext && strcmp(ext, ".yaml") == 0) {
+                    snprintf(practices[count], MAX_PRACTICE_NAME, "%s/%s", CATEGORY_DIRS[i], entry->d_name);
+                    char *yaml_ext = strrchr(practices[count], '.');
+                    if (yaml_ext) *yaml_ext = '\0'; // Remove .yaml extension
+                    count++;
+                }
             }
         }
+        closedir(dir);
     }
 
-    closedir(dir);
     return count;
 }
 
-int list_practices(void) {
-    char practices[MAX_PRACTICES][MAX_PRACTICE_NAME];
-    int count = get_practices(practices, MAX_PRACTICES);
-
-    if (count < 0) {
-        fprintf(stderr, "Error: Unable to get practices\n");
-        return 1;
-    }
-
-    printf("Available practices:\n");
-    for (int i = 0; i < count; i++) {
-        printf("- %s\n", practices[i]);
-    }
-
-    return 0;
-}
-
 int run_practice(const char *practice_name) {
-    // This is a placeholder. You'll need to implement the actual logic
-    // to run a practice based on its YAML file.
     printf("Running practice: %s\n", practice_name);
     return 0;
 }
 
 int configure_practice(const char *practice_name) {
-    // This is a placeholder. You'll need to implement the actual logic
-    // to configure a practice.
     printf("Configuring practice: %s\n", practice_name);
     return 0;
 }

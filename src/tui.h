@@ -4,8 +4,9 @@
 #include <termbox.h>
 
 // Function prototypes
-int run_gui(void);
+int run_tui(void);
 void show_message(const char *message);
+void tb_print(int x, int y, uint16_t fg, uint16_t bg, const char *str);
 int list_practices_gui(void);
 
 #endif // UI_H

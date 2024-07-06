@@ -2,9 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <termbox.h>
-#include "ui.h"
-#include "practice.h"
-#include "utils.h"
+#include "tui.h"
+#include "practice_manager.h"
 
 #define MENU_ITEMS 5
 #define MAX_PRACTICES 100
@@ -13,6 +12,12 @@
 static const char *menu_items[MENU_ITEMS] = {
     "List Practices", "Run Practice", "Update Practices", "Configure Practice", "Exit"
 };
+
+void tb_print(int x, int y, uint16_t fg, uint16_t bg, const char *str) {
+    while (*str) {
+        tb_change_cell(x++, y, *str++, fg, bg);
+    }
+}
 
 static int show_initialization_prompt(void) {
     tb_clear();
@@ -54,7 +59,6 @@ void show_message(const char *message) {
         }
     }
 }
-
 int list_practices_gui(void) {
     tb_clear();
     int width = tb_width();
@@ -110,7 +114,7 @@ static void draw_menu(int selected) {
     tb_present();
 }
 
-int run_gui(void) {
+int run_tui(void) {
     int selected = 0;
     struct tb_event ev;
 
