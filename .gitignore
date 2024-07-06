@@ -46,3 +46,7 @@ devenv.local.nix
 
 # pre-commit
 .pre-commit-config.yaml
+
+
+# other
+sadhana-main.zip

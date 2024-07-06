@@ -1,13 +1,12 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "ui.h"
 #include "practice.h"
 void print_help(const char *program_name) {
     printf("Usage: %s <command> [args...]\n\n", program_name);
     printf("Commands:\n");
-    printf("  init               Initialize the recipe hub\n");
-    printf("  update             Update recipes\n");
+    printf("  init               Initialize sadhana hub practices\n");
+    printf("  update             Update practices\n");
     printf("  list               List available practices\n");
     printf("  run <practice>     Run a specific practice\n");
     printf("  config <practice>  Configure a specific practice\n");
@@ -25,11 +24,25 @@ int main(int argc, char *argv[]) {
         print_help(argv[0]);
         return 0;
     } else if (strcmp(argv[1], "init") == 0) {
-        return initialize_recipes();
+        return initialize_practices();
     } else if (strcmp(argv[1], "update") == 0) {
-        return update_recipes();
+        return update_practices();
     } else if (strcmp(argv[1], "list") == 0) {
-        return list_recipes();
+        if (!practices_initialized()) {
+            printf("Practices not initialized. Would you like to initialize them? (y/n): ");
+            char c;
+            if (scanf(" %c", &c) == 1 && (c == 'y' || c == 'Y')) {
+                int result = initialize_practices();
+                if (result != 0) {
+                    fprintf(stderr, "Failed to initialize practices.\n");
+                    return result;
+                }
+            } else {
+                printf("Practices not initialized. Cannot list.\n");
+                return 1;
+            }
+        }
+        return list_practices();
     } else if (strcmp(argv[1], "run") == 0) {
         if (argc < 3) {
             fprintf(stderr, "Usage: %s run <practice_name>\n", argv[0]);
