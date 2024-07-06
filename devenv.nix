@@ -18,6 +18,7 @@ in
     '';
     clean.exec = ''
       rm -rf ${binDir}
+      rm -f src/*.o
     '';
     run.exec = ''
       ${binDir}/sadhana "$@"
@@ -40,7 +41,7 @@ in
     echo "C development environment ready!"
     echo "Available commands:"
     echo "  build : Build sadhana binary"
-    echo "  clean : Remove built binaries"
+    echo "  clean : Remove built binaries and object files"
     echo "  run [args...] : Run the sadhana binary with optional arguments"
   '';
 }

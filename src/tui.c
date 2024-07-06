@@ -5,12 +5,12 @@
 #include "tui.h"
 #include "practice_manager.h"
 
-#define MENU_ITEMS 5
+#define MENU_ITEMS 4
 #define MAX_PRACTICES 100
 #define MAX_PRACTICE_NAME 256
 
 static const char *menu_items[MENU_ITEMS] = {
-    "List Practices", "Run Practice", "Update Practices", "Configure Practice", "Exit"
+    "Run Practice", "Update Practices", "Configure Practice", "Exit"
 };
 
 void tb_print(int x, int y, uint16_t fg, uint16_t bg, const char *str) {
@@ -59,11 +59,12 @@ void show_message(const char *message) {
         }
     }
 }
-int list_practices_gui(void) {
+
+int run_practice_gui(void) {
     tb_clear();
     int width = tb_width();
     int height = tb_height();
-    tb_print((width - 17) / 2, 1, TB_WHITE | TB_BOLD, TB_DEFAULT, "List of Practices");
+    tb_print((width - 16) / 2, 1, TB_WHITE | TB_BOLD, TB_DEFAULT, "Run a Practice");
 
     char practices[MAX_PRACTICES][MAX_PRACTICE_NAME];
     int practice_count = get_practices(practices, MAX_PRACTICES);
@@ -73,22 +74,37 @@ int list_practices_gui(void) {
         return 1;
     }
 
-    int y = 3;
-    for (int i = 0; i < practice_count && y < height - 2; i++) {
-        tb_print(2, y++, TB_WHITE, TB_DEFAULT, practices[i]);
-    }
+    int selected = 0;
+    while (1) {
+        tb_clear();
+        tb_print((width - 16) / 2, 1, TB_WHITE | TB_BOLD, TB_DEFAULT, "Run a Practice");
 
-    tb_print((width - 21) / 2, height - 1, TB_WHITE, TB_DEFAULT, "Press any key to continue");
-    tb_present();
+        int y = 3;
+        for (int i = 0; i < practice_count && y < height - 2; i++) {
+            uint16_t fg = (i == selected) ? TB_BLACK : TB_WHITE;
+            uint16_t bg = (i == selected) ? TB_WHITE : TB_DEFAULT;
+            tb_print(2, y++, fg, bg, practices[i]);
+        }
 
-    struct tb_event ev;
-    while (tb_poll_event(&ev)) {
-        if (ev.type == TB_EVENT_KEY) {
-            break;
+        tb_print((width - 21) / 2, height - 1, TB_WHITE, TB_DEFAULT, "Press Enter to select");
+        tb_present();
+
+        struct tb_event ev;
+        if (tb_poll_event(&ev)) {
+            if (ev.type == TB_EVENT_KEY) {
+                if (ev.key == TB_KEY_ESC || ev.key == TB_KEY_CTRL_C) {
+                    return 1;
+                } else if (ev.key == TB_KEY_ARROW_UP) {
+                    selected = (selected - 1 + practice_count) % practice_count;
+                } else if (ev.key == TB_KEY_ARROW_DOWN) {
+                    selected = (selected + 1) % practice_count;
+                } else if (ev.key == TB_KEY_ENTER) {
+                    run_practice(practices[selected]);
+                    return 0;
+                }
+            }
         }
     }
-
-    return 0;
 }
 
 static void draw_menu(int selected) {
@@ -151,21 +167,18 @@ int run_tui(void) {
                                         break;
                                     }
                                 }
-                                result = list_practices_gui();
+                                result = run_practice_gui();
                                 if (result != 0) {
-                                    show_message("Failed to list practices");
+                                    show_message("Failed to run practice");
                                 }
                                 break;
                             case 1:
-                                result = run_practice(NULL);  // Implement practice selection
-                                break;
-                            case 2:
                                 result = update_practices();
                                 break;
-                            case 3:
+                            case 2:
                                 result = configure_practice(NULL);  // Implement practice selection
                                 break;
-                            case 4:
+                            case 3:
                                 tb_shutdown();
                                 return 0;
                         }
@@ -173,9 +186,9 @@ int run_tui(void) {
                     }
                     break;
                 case TB_EVENT_RESIZE:
+                    draw_menu(selected);
                     break;
             }
-            draw_menu(selected);
         }
     }
 }

@@ -184,7 +184,7 @@ int get_practices(char practices[][MAX_PRACTICE_NAME], int max_practices) {
     struct dirent *entry;
     struct stat file_stat;
 
-    for (int i = 0; i < NUM_CATEGORIES && count < max_practices; i++) {
+    for (size_t i = 0; i < NUM_CATEGORIES && count < max_practices; i++) {
         char category_path[512];
         snprintf(category_path, sizeof(category_path), "%s/%s", practices_dir, CATEGORY_DIRS[i]);
 
