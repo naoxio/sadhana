@@ -20,7 +20,7 @@ in
       rm -rf ${binDir}
       rm -f src/*.o
     '';
-    run.exec = ''
+    sadhana.exec = ''
       ${binDir}/sadhana "$@"
     '';
   };
