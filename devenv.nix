@@ -8,6 +8,7 @@ in
     pkgs.clang
     pkgs.curl
     pkgs.termbox
+    pkgs.libyaml
     pkgs.pkg-config
   ];
   languages.c.enable = true;
@@ -29,10 +30,13 @@ in
     INCLUDES = builtins.concatStringsSep " " [
       "-I${pkgs.termbox}/include"
       "-I${pkgs.curl.dev}/include"
+      "-I${pkgs.libyaml}/include"
     ];
     LIBS = builtins.concatStringsSep " " [
       "-L${pkgs.termbox}/lib"
       "-L${pkgs.curl.out}/lib"
+      "-L${pkgs.libyaml}/lib"
+      "-lyaml"
       "-ltermbox"
       "-lcurl"
     ];
@@ -42,6 +46,6 @@ in
     echo "Available commands:"
     echo "  build : Build sadhana binary"
     echo "  clean : Remove built binaries and object files"
-    echo "  run [args...] : Run the sadhana binary with optional arguments"
+    echo "  sadhana [args...] : Run the sadhana binary with optional arguments"
   '';
 }

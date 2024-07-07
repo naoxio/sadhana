@@ -1,13 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <termbox.h>
 #include "tui.h"
-#include "practice_manager.h"
+#include "core.h"
 
 #define MENU_ITEMS 4
-#define MAX_PRACTICES 100
-#define MAX_PRACTICE_NAME 256
 
 static const char *menu_items[MENU_ITEMS] = {
      "Run Practice", "Update Practices", "Configure Practice", "Exit"
@@ -60,7 +59,7 @@ void show_message(const char *message) {
     }
 }
 
-int select_practice_gui(char *selected_practice) {
+int select_practice_tui(char *selected_practice) {
     tb_clear();
     int width = tb_width();
     int height = tb_height();
@@ -131,6 +130,85 @@ static void draw_menu(int selected) {
     tb_present();
 }
 
+void draw_practice_screen(Practice *practice, int current_round, int current_phase, int current_step, int countdown) {
+    tb_clear();
+    int width = tb_width();
+    int height = tb_height();
+
+    char info[256];
+    snprintf(info, sizeof(info), "Practice: %s - Round %d/%d - Phase: %s", 
+             practice->name, current_round, practice->total_rounds, 
+             practice->phases[current_phase].name);
+    tb_print((width - strlen(info)) / 2, 1, TB_WHITE | TB_BOLD, TB_DEFAULT, info);
+
+    char action[256];
+    snprintf(action, sizeof(action), "Action: %s", 
+             practice->phases[current_phase].steps[current_step].action);
+    tb_print((width - strlen(action)) / 2, 3, TB_WHITE, TB_DEFAULT, action);
+
+    char time_left[256];
+    snprintf(time_left, sizeof(time_left), "Time left: %d seconds", countdown);
+    tb_print((width - strlen(time_left)) / 2, 5, TB_WHITE, TB_DEFAULT, time_left);
+
+    tb_print((width - 21) / 2, height - 2, TB_WHITE, TB_DEFAULT, "Press 'q' to quit");
+
+    tb_present();
+}
+
+int run_practice_tui(const char *practice_name) {
+    Practice practice;
+    if (load_practice(practice_name, &practice) != 0) {
+        return 1;
+    }
+
+    if (tb_init() != 0) {
+        fprintf(stderr, "TB_INIT failed\n");
+        return 1;
+    }
+
+    int current_round = 1;
+    int current_phase = 0;
+    int current_step = 0;
+    int countdown;
+    time_t start_time, current_time;
+
+    while (current_round <= practice.total_rounds) {
+        Phase *phase = &practice.phases[current_phase];
+        Step *step = &phase->steps[current_step];
+
+        countdown = step->duration;
+        start_time = time(NULL);
+
+        while (countdown > 0) {
+            draw_practice_screen(&practice, current_round, current_phase, current_step, countdown);
+
+            struct tb_event ev;
+            if (tb_peek_event(&ev, 100) > 0) {
+                if (ev.type == TB_EVENT_KEY && (ev.ch == 'q' || ev.key == TB_KEY_ESC)) {
+                    tb_shutdown();
+                    return 0;
+                }
+            }
+
+            current_time = time(NULL);
+            countdown = step->duration - (int)(current_time - start_time);
+        }
+
+        current_step++;
+        if (current_step >= phase->step_count) {
+            current_step = 0;
+            current_phase++;
+            if (current_phase >= practice.phase_count) {
+                current_phase = 0;
+                current_round++;
+            }
+        }
+    }
+
+    tb_shutdown();
+    return 0;
+}
+
 int run_tui(void) {
     int selected = 0;
     struct tb_event ev;
@@ -160,7 +238,7 @@ int run_tui(void) {
                             case 0:
                                 if (!practices_initialized()) {
                                     if (show_initialization_prompt()) {
-                                        result = initialize_practices();
+                                        result = initialize_or_update_sadhana_hub();
                                         if (result != 0) {
                                             show_message("Initialization failed");
                                             break;
@@ -170,19 +248,19 @@ int run_tui(void) {
                                         break;
                                     }
                                 }
-                                result = select_practice_gui(selected_practice);
+                                result = select_practice_tui(selected_practice);
                                 if (result == 0) {
-                                    result = run_practice(selected_practice);
+                                    result = run_practice_tui(selected_practice);
                                     if (result != 0) {
                                         show_message("Failed to run practice");
                                     }
                                 }
                                 break;
                             case 1:
-                                result = update_practices();
+                                result = initialize_or_update_sadhana_hub();
                                 break;
                             case 2:
-                                result = configure_practice(NULL);  // Implement practice selection
+                                result = configure_practice(NULL, "dummy_key", "dummy_value");  // Implement practice selection
                                 break;
                             case 3:
                                 tb_shutdown();
