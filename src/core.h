@@ -5,7 +5,6 @@
 
 #include <libintl.h>
 #include <locale.h>
-#include <yaml.h>
 
 #define _(String) gettext(String)
 #define MAX_PRACTICE_NAME 256
@@ -51,15 +50,5 @@ int get_practices(char practices[][MAX_PRACTICE_NAME], int max_practices);
 int load_practice(const char *practice_name, Practice *practice);
 int execute_practice(Practice *practice, void (*step_callback)(const Step*, int, int, int, void*), void *user_data);
 int configure_practice(const char *practice_name, const char *config_key, const char *config_value);
-
-void parse_exercise_structure(yaml_document_t *document, yaml_node_t *node, Practice *practice);
-void parse_rounds(yaml_document_t *document, yaml_node_t *node, Practice *practice);
-void parse_phases(yaml_document_t *document, yaml_node_t *node, Practice *practice);
-void parse_phase(yaml_document_t *document, yaml_node_t *node, Phase *phase);
-void parse_repeats(yaml_document_t *document, yaml_node_t *node, Phase *phase);
-void parse_steps(yaml_document_t *document, yaml_node_t *node, Phase *phase);
-void parse_step(yaml_document_t *document, yaml_node_t *node, Step *step);
-void parse_duration(yaml_document_t *document, yaml_node_t *node, Step *step);
-void parse_sounds(yaml_document_t *document, yaml_node_t *node, Step *step);
 
 #endif // CORE_H
