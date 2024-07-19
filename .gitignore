@@ -50,3 +50,7 @@ devenv.local.nix
 
 # other
 sadhana-main.zip
+
+
+# nim
+.nimble
