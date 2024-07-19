@@ -1,78 +1,73 @@
-import iup
+import nigui
+import nigui/msgbox
 import ../core/practice, ../core/config
 
-proc menuItemListPractices(ih: PIhandle): cint {.cdecl.} =
-  let recipes = listRecipes()
-  var msg = "Available practices:\n\n"
-  for recipe in recipes:
-    msg.add("  " & recipe & "\n")
-  iup.message("Practices", msg)
-  IUP_DEFAULT
-
-proc menuItemRunPractice(ih: PIhandle): cint {.cdecl.} =
-  # Implement practice selection and running
-  iup.message("Run Practice", "Practice selection and running not implemented yet")
-  IUP_DEFAULT
-
-proc menuItemUpdatePractices(ih: PIhandle): cint {.cdecl.} =
-  if updateRecipes():
-    iup.message("Update", "Recipes updated successfully")
-  else:
-    iup.message("Update", "Failed to update recipes")
-  IUP_DEFAULT
-
-proc menuItemConfigurePractice(ih: PIhandle): cint {.cdecl.} =
-  # Implement practice selection and configuration
-  iup.message("Configure Practice", "Practice configuration not implemented yet")
-  IUP_DEFAULT
-
-proc menuItemExit(ih: PIhandle): cint {.cdecl.} =
-  IUP_CLOSE
-
 proc guiMain*() =
-  discard iup.open(nil, nil)
+  app.init()
   
-  var itemListPractices = iup.item("List Practices", nil)
-  var itemRunPractice = iup.item("Run Practice", nil)
-  var itemUpdatePractices = iup.item("Update Practices", nil)
-  var itemConfigurePractice = iup.item("Configure Practice", nil)
-  var itemExit = iup.item("Exit", nil)
+  var window = newWindow("Sadhana")
+  window.width = 400
+  window.height = 300
 
-  discard iup.setCallback(itemListPractices, "ACTION", cast[ICallback](menuItemListPractices))
-  discard iup.setCallback(itemRunPractice, "ACTION", cast[ICallback](menuItemRunPractice))
-  discard iup.setCallback(itemUpdatePractices, "ACTION", cast[ICallback](menuItemUpdatePractices))
-  discard iup.setCallback(itemConfigurePractice, "ACTION", cast[ICallback](menuItemConfigurePractice))
-  discard iup.setCallback(itemExit, "ACTION", cast[ICallback](menuItemExit))
+  var container = newLayoutContainer(Layout_Vertical)
+  window.add(container)
 
-  var fileMenu = iup.menu(
-    itemListPractices,
-    itemRunPractice,
-    itemUpdatePractices,
-    itemConfigurePractice,
-    iup.separator(),
-    itemExit,
-    nil
-  )
+  var label = newLabel("Welcome to Sadhana")
+  label.fontSize = 20
+  container.add(label)
 
-  var mainMenu = iup.menu(iup.subMenu("File", fileMenu), nil)
-  discard iup.setHandle("mainMenu", mainMenu)
+  var btnListPractices = newButton("List Practices")
+  var btnRunPractice = newButton("Run Practice")
+  var btnUpdatePractices = newButton("Update Practices")
+  var btnConfigurePractice = newButton("Configure Practice")
+  var btnExit = newButton("Exit")
 
-  var label = iup.label("Welcome to Sadhana")
-  iup.setAttribute(label, "ALIGNMENT", "ACENTER")
+  container.add(btnListPractices)
+  container.add(btnRunPractice)
+  container.add(btnUpdatePractices)
+  container.add(btnConfigurePractice)
+  container.add(btnExit)
 
-  var vbox = iup.vbox(label, nil)
-  iup.setAttribute(vbox, "ALIGNMENT", "ACENTER")
-  iup.setAttribute(vbox, "GAP", "10")
-  iup.setAttribute(vbox, "MARGIN", "10x10")
+  btnListPractices.onClick = proc(event: ClickEvent) =
+    let recipes = listRecipes()
+    var msg = "Available practices:\n\n"
+    for recipe in recipes:
+      msg.add("  " & recipe & "\n")
+    discard window.msgBox(msg, "Practices")
 
-  var dlg = iup.dialog(vbox)
-  iup.setAttribute(dlg, "TITLE", "Sadhana")
-  iup.setAttribute(dlg, "SIZE", "300x200")
-  iup.setAttribute(dlg, "MENU", "mainMenu")
+  btnRunPractice.onClick = proc(event: ClickEvent) =
+    let res = window.msgBox("Select a practice to run:", "Run Practice", "Practice 1", "Practice 2", "Cancel")
+    case res
+    of 0: discard window.msgBox("Running Practice 1", "Run Practice")
+    of 1: discard window.msgBox("Running Practice 2", "Run Practice")
+    else: discard
 
-  discard iup.showXY(dlg, IUP_CENTER, IUP_CENTER)
-  discard iup.mainLoop()
-  iup.close()
+  btnUpdatePractices.onClick = proc(event: ClickEvent) =
+    if updateRecipes():
+      window.alert("Recipes updated successfully")
+    else:
+      window.alert("Failed to update recipes")
+
+  btnConfigurePractice.onClick = proc(event: ClickEvent) =
+    let res = window.msgBox("Select a practice to configure:", "Configure Practice", "Practice 1", "Practice 2", "Cancel")
+    case res
+    of 0: discard window.msgBox("Configuring Practice 1", "Configure Practice")
+    of 1: discard window.msgBox("Configuring Practice 2", "Configure Practice")
+    else: discard
+
+  btnExit.onClick = proc(event: ClickEvent) =
+    let res = window.msgBox("Are you sure you want to exit?", "Exit", "Yes", "No")
+    if res == 0:
+      app.quit()  # Use app.quit() to close the application
+
+  window.onCloseClick = proc(event: CloseClickEvent) =
+    case window.msgBox("Do you want to quit?", "Quit?", "Quit", "Minimize", "Cancel")
+    of 1: window.dispose()
+    of 2: window.minimize()
+    else: discard
+
+  window.show()
+  app.run()
 
 when isMainModule:
   guiMain()

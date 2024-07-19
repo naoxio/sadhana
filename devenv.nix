@@ -10,6 +10,7 @@ in
     pkgs.pcre
     pkgs.termbox
     pkgs.libzip
+    pkgs.gtk3 
   ];
   languages.nim.enable = true;
   scripts = {
@@ -73,7 +74,7 @@ le
     }
 
     # Install required packages if not already installed
-    for package in zip nimbox iup; do
+    for package in zip nimbox nigui; do
       if ! is_package_installed $package; then
         echo "Installing $package..."
         nimble install -y $package
