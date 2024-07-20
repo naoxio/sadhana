@@ -56,10 +56,8 @@ proc guiMain*() =
     else: discard
 
   btnExit.onClick = proc(event: ClickEvent) =
-    let res = window.msgBox("Are you sure you want to exit?", "Exit", "Yes", "No")
-    if res == 0:
-      app.quit()  # Use app.quit() to close the application
-
+    window.dispose()
+    
   window.onCloseClick = proc(event: CloseClickEvent) =
     case window.msgBox("Do you want to quit?", "Quit?", "Quit", "Minimize", "Cancel")
     of 1: window.dispose()
